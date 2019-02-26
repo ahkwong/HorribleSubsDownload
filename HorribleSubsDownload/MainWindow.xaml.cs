@@ -92,7 +92,7 @@ namespace HorribleSubsDownload
                 string name = subject;
                 name = name.Replace("[HorribleSubs]", "");
                 name = Regex.Replace(name, @"- \d+(\.\d+)? \[(720p|1080p)\].mkv", "");
-                name = name.Trim();
+                name = name.ReplaceSpecialCharacters();
 
                 string number = Regex.Match(subject, @"- \d+(\.\d+)? \[(720p|1080p)\].mkv").Value;
                 number = Regex.Match(number, @"\d+(\.\d+)?").Value;
@@ -143,6 +143,7 @@ namespace HorribleSubsDownload
             }
         }
 
+        //AutoDownload
         private void AutoDownload_Checked(object sender, RoutedEventArgs e)
         {
             Timer.Enabled = true;
@@ -182,20 +183,30 @@ namespace HorribleSubsDownload
             AutoDownloadMinutes.Text = MySettings.AutoDownloadMinutes.ToString();
         }
 
+        //Check Uncheck Titles
         private void TitleChecked(object sender, RoutedEventArgs e)
         {
             CheckBox title = (CheckBox)sender;
-            MySettings.TitleDictionary.Add(title.Content.ToString(), "-1");
+            string name = title.Content.ToString().ReplaceSpecialCharacters();
+            if (!MySettings.TitleDictionary.ContainsKey(name))
+            {
+                MySettings.TitleDictionary.Add(name, "-1");
+            }
             MySettings.Save();
         }
 
         private void TitleUnChecked(object sender, RoutedEventArgs e)
         {
             CheckBox show = (CheckBox)sender;
-            MySettings.TitleDictionary.Remove(show.Content.ToString());
+            string name = show.Content.ToString().ReplaceSpecialCharacters();
+            if (MySettings.TitleDictionary.ContainsKey(name))
+            {
+                MySettings.TitleDictionary.Remove(name);
+            }
             MySettings.Save();
         }
 
+        //Minimize to Tray
         private void TrayIconDoubleClick(object sender, RoutedEventArgs e)
         {
             Open(sender, e);
