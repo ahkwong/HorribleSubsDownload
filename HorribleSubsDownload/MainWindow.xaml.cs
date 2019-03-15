@@ -84,6 +84,7 @@ namespace HorribleSubsDownload
 
         private void Download_Click(object sender, RoutedEventArgs e)
         {
+            feed.Items = feed.Items.Reverse();
             foreach (SyndicationItem item in feed.Items)
             {
                 string subject = item.Title.Text;
