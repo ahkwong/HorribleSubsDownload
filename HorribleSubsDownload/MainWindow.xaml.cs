@@ -101,11 +101,25 @@ namespace HorribleSubsDownload
 
                 if (MySettings.TitleDictionary.ContainsKey(name))
                 {
-                    if (MySettings.TitleDictionary[name] != numberValue)
+                    bool savedNumberConvertSuccess = Int32.TryParse(MySettings.TitleDictionary[name], out int savedNumber);
+                    bool newNumberConvertSuccess = Int32.TryParse(numberValue, out int newNumber);
+                    if (savedNumberConvertSuccess && newNumberConvertSuccess)
                     {
-                        MySettings.TitleDictionary[name] = numberValue;
-                        MySettings.Save();
-                        Process.Start(link);
+                        if (savedNumber < newNumber)
+                        {
+                            MySettings.TitleDictionary[name] = numberValue;
+                            MySettings.Save();
+                            Process.Start(link);
+                        }
+                    }
+                    else
+                    {
+                        if (MySettings.TitleDictionary[name] != numberValue)
+                        {
+                            MySettings.TitleDictionary[name] = numberValue;
+                            MySettings.Save();
+                            Process.Start(link);
+                        }
                     }
                 }
             }
