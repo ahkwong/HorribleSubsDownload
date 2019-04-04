@@ -64,11 +64,11 @@ namespace HorribleSubsDownload
             ListOfTitles = new ObservableCollection<Title>();
             foreach (var item in items)
             {
-                string name = WebUtility.HtmlDecode(item.InnerText.Trim());
+                string name = WebUtility.HtmlDecode(item.GetAttributeValue("title", item.InnerText).Trim());
                 ListOfTitles.Add(new Title
                 {
                     Name = name,
-                    IsChecked = MySettings.TitleDictionary.ContainsKey(name)
+                    IsChecked = MySettings.TitleDictionary.ContainsKey(name.ReplaceSpecialCharacters())
                 });
             }
             DataContext = this;
