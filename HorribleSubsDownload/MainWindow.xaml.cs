@@ -102,8 +102,8 @@ namespace HorribleSubsDownload
 
                 if (MySettings.TitleDictionary.ContainsKey(name))
                 {
-                    bool savedNumberConvertSuccess = Int32.TryParse(MySettings.TitleDictionary[name], out int savedNumber);
-                    bool newNumberConvertSuccess = Int32.TryParse(numberValue, out int newNumber);
+                    bool savedNumberConvertSuccess = decimal.TryParse(MySettings.TitleDictionary[name], out decimal savedNumber);
+                    bool newNumberConvertSuccess = decimal.TryParse(numberValue, out decimal newNumber);
                     if (savedNumberConvertSuccess && newNumberConvertSuccess)
                     {
                         if (savedNumber < newNumber)
