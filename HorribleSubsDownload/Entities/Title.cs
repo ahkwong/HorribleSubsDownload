@@ -9,5 +9,7 @@ namespace HorribleSubsDownload.Entities
     {
         public string Name { get; set; }
         public bool IsChecked { get; set; }
+        //a comment
+        //newFeature branch
     }
 }
