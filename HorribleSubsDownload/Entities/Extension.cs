@@ -19,8 +19,6 @@ namespace HorribleSubsDownload.Entities
                 result += match.ToString() + " ";
             }
             return result.Trim();
-            return null;
-            return null;
         }
     }
 }
