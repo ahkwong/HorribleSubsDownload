@@ -25,7 +25,6 @@ namespace HorribleSubsDownload
             Properties.Settings.Default.AutoDownload = AutoDownload;
             Properties.Settings.Default.AutoDownloadMinutes = AutoDownloadMinutes;
             Properties.Settings.Default.Save();
-            //a comment
         }
     }
 }
