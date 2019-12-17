@@ -20,6 +20,7 @@ namespace HorribleSubsDownload.Entities
             }
             return result.Trim();
             return null;
+            return null;
         }
     }
 }
