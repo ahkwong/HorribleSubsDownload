@@ -72,21 +72,22 @@ namespace HorribleSubsDownload
             ListOfTitles = new ObservableCollection<Title>();
             foreach (var item in items)
             {
-                string name = item.InnerText;
+                string name = WebUtility.HtmlDecode(item.InnerText);
                 ListOfTitles.Add(new Title
                 {
                     Name = name,
                     IsChecked = MySettings.TitleDictionary.ContainsKey(name.ReplaceSpecialCharacters())
                 });
             }
+            ListOfTitles = new ObservableCollection<Title>(ListOfTitles.OrderBy(n => n.Name));
             DataContext = this;
         }
 
         private void LoadRSS()
         {
             WebClient webClient = new WebClient();
-            webClient.Headers.Add("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36");
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+            webClient.Headers.Add("cookie", "__ddg2=Ab4naes3yCfIYa5V; __ddg1=hVyCvoy5RD1ljT3QLsIU");
+            webClient.Headers.Add("user-agent", "MyRSSReader");
 
             using (XmlReader reader = XmlReader.Create(webClient.OpenRead(Url.Text)))
             {
@@ -103,7 +104,7 @@ namespace HorribleSubsDownload
                 string link = item.Links[0].Uri.ToString();
 
                 string name = subject;
-                name = name.Replace(@"\[(720p|1080p)\]", "");
+                name = Regex.Replace(name, @"\[(720p|1080p)\]", "");
                 name = Regex.Replace(name, @"– \d+(\.\d+)?.+", "");
                 name = name.ReplaceSpecialCharacters();
 
