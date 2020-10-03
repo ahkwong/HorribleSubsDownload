@@ -18,19 +18,26 @@ namespace HorribleSubsDownload
 {
     public partial class MainWindow : Window
     {
-        const string res720p = "http://www.horriblesubs.info/rss.php?res=720";
-        const string res1080p = "http://www.horriblesubs.info/rss.php?res=1080";
-        const string currentSeason = "https://horriblesubs.info/current-season/";
+        const string res720p = "https://rss.erai-ddl2.info/rss-720/";
+        const string res1080p = "https://rss.erai-ddl2.info/rss-1080/";
+        const string currentSeason = "https://myanimelist.net/anime/season/schedule";
         public ObservableCollection<Title> ListOfTitles { get; set; }
         SyndicationFeed feed = new SyndicationFeed();
         Timer Timer = null;
 
         public MainWindow()
         {
-            InitializeComponent();
-            LoadAppSettings();
-            LoadTitles();
-            LoadRSS();
+            try
+            {
+                InitializeComponent();
+                LoadAppSettings();
+                LoadTitles();
+                LoadRSS();
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message, "RSS Error", MessageBoxButton.OKCancel, MessageBoxImage.Error);
+            }
         }
 
         private void LoadAppSettings()
@@ -42,7 +49,8 @@ namespace HorribleSubsDownload
                 MySettings.TitleDictionary = new Dictionary<string, string>();
             }
 
-            if (string.IsNullOrEmpty(MySettings.Resolution))
+            if (string.IsNullOrEmpty(MySettings.Resolution) || 
+               (MySettings.Resolution != res720p && MySettings.Resolution != res1080p))
             {
                 MySettings.Resolution = res720p;
             }
@@ -60,11 +68,11 @@ namespace HorribleSubsDownload
         {
             var web = new HtmlWeb();
             var doc = web.Load(currentSeason);
-            var items = doc.DocumentNode.SelectNodes("//div[@class='ind-show']/a");
+            var items = doc.DocumentNode.SelectNodes("//div[@class='seasonal-anime js-seasonal-anime']//h2");
             ListOfTitles = new ObservableCollection<Title>();
             foreach (var item in items)
             {
-                string name = WebUtility.HtmlDecode(item.GetAttributeValue("title", item.InnerText).Trim());
+                string name = item.InnerText;
                 ListOfTitles.Add(new Title
                 {
                     Name = name,
@@ -76,7 +84,11 @@ namespace HorribleSubsDownload
 
         private void LoadRSS()
         {
-            using (XmlReader reader = XmlReader.Create(Url.Text))
+            WebClient webClient = new WebClient();
+            webClient.Headers.Add("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36");
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+
+            using (XmlReader reader = XmlReader.Create(webClient.OpenRead(Url.Text)))
             {
                 feed = SyndicationFeed.Load(reader);
             }
@@ -91,11 +103,11 @@ namespace HorribleSubsDownload
                 string link = item.Links[0].Uri.ToString();
 
                 string name = subject;
-                name = name.Replace("[HorribleSubs]", "");
-                name = Regex.Replace(name, @"- \d+(\.\d+)? \[(720p|1080p)\].mkv", "");
+                name = name.Replace(@"\[(720p|1080p)\]", "");
+                name = Regex.Replace(name, @"– \d+(\.\d+)?.+", "");
                 name = name.ReplaceSpecialCharacters();
 
-                string number = Regex.Match(subject, @"- \d+(\.\d+)? \[(720p|1080p)\].mkv").Value;
+                string number = Regex.Match(subject, @"– \d+(\.\d+)?.+").Value;
                 number = Regex.Match(number, @"\d+(\.\d+)?").Value;
                 number = number.Trim();
                 string numberValue = number;
