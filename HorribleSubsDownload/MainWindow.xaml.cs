@@ -1,11 +1,12 @@
 ﻿using HorribleSubsDownload.Entities;
-using HtmlAgilityPack;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.ServiceModel.Syndication;
 using System.Text.RegularExpressions;
 using System.Timers;
@@ -18,9 +19,9 @@ namespace HorribleSubsDownload
 {
     public partial class MainWindow : Window
     {
-        const string res720p = "https://rss.erai-ddl2.info/rss-720/";
-        const string res1080p = "https://rss.erai-ddl2.info/rss-1080/";
-        const string currentSeason = "https://myanimelist.net/anime/season/schedule";
+        const string res720p = "https://subsplease.org/rss/?r=720";
+        const string res1080p = "https://subsplease.org/rss/?r=1080";
+        const string currentSeason = "https://subsplease.org/api/?f=schedule&tz=America/Los_Angeles";
         public ObservableCollection<Title> ListOfTitles { get; set; }
         SyndicationFeed feed = new SyndicationFeed();
         Timer Timer = null;
@@ -49,7 +50,7 @@ namespace HorribleSubsDownload
                 MySettings.TitleDictionary = new Dictionary<string, string>();
             }
 
-            if (string.IsNullOrEmpty(MySettings.Resolution) || 
+            if (string.IsNullOrEmpty(MySettings.Resolution) ||
                (MySettings.Resolution != res720p && MySettings.Resolution != res1080p))
             {
                 MySettings.Resolution = res720p;
@@ -66,30 +67,51 @@ namespace HorribleSubsDownload
 
         private void LoadTitles()
         {
-            var web = new HtmlWeb();
-            var doc = web.Load(currentSeason);
-            var items = doc.DocumentNode.SelectNodes("//div[@class='seasonal-anime js-seasonal-anime']//h2");
-            ListOfTitles = new ObservableCollection<Title>();
-            foreach (var item in items)
+            var apiResult = new APIViewModel();
+
+            using (HttpClient client = new HttpClient())
             {
-                string name = WebUtility.HtmlDecode(item.InnerText);
+                HttpResponseMessage response = client.GetAsync(currentSeason).Result;
+                if (response.IsSuccessStatusCode)
+                {
+                    var apiResultJson = response.Content.ReadAsStringAsync().Result;
+                    apiResult = JsonConvert.DeserializeObject<APIViewModel>(apiResultJson);
+                }
+                else
+                {
+                    var errorMessage = $"{(int)response.StatusCode}, {response.ReasonPhrase}";
+                    MessageBox.Show(errorMessage, "API Error", MessageBoxButton.OKCancel, MessageBoxImage.Error);
+                }
+            }
+
+            ListOfTitles = new ObservableCollection<Title>();
+            AddToList(apiResult.Schedule.Monday);
+            AddToList(apiResult.Schedule.Tuesday);
+            AddToList(apiResult.Schedule.Wednesday);
+            AddToList(apiResult.Schedule.Thursday);
+            AddToList(apiResult.Schedule.Friday);
+            AddToList(apiResult.Schedule.Saturday);
+            AddToList(apiResult.Schedule.Sunday);
+            ListOfTitles = new ObservableCollection<Title>(ListOfTitles.OrderBy(n => n.Name));
+            DataContext = this;
+        }
+
+        private void AddToList(List<Anime> animes)
+        {
+            foreach (var anime in animes)
+            {
+                string name = WebUtility.HtmlDecode(anime.Title);
                 ListOfTitles.Add(new Title
                 {
                     Name = name,
                     IsChecked = MySettings.TitleDictionary.ContainsKey(name.ReplaceSpecialCharacters())
                 });
             }
-            ListOfTitles = new ObservableCollection<Title>(ListOfTitles.OrderBy(n => n.Name));
-            DataContext = this;
         }
 
         private void LoadRSS()
         {
-            WebClient webClient = new WebClient();
-            webClient.Headers.Add("cookie", "__ddg2=Ab4naes3yCfIYa5V; __ddg1=hVyCvoy5RD1ljT3QLsIU");
-            webClient.Headers.Add("user-agent", "MyRSSReader");
-
-            using (XmlReader reader = XmlReader.Create(webClient.OpenRead(Url.Text)))
+            using (XmlReader reader = XmlReader.Create(Url.Text))
             {
                 feed = SyndicationFeed.Load(reader);
             }
@@ -104,11 +126,12 @@ namespace HorribleSubsDownload
                 string link = item.Links[0].Uri.ToString();
 
                 string name = subject;
-                name = Regex.Replace(name, @"\[(720p|1080p)\]", "");
-                name = Regex.Replace(name, @"– \d+(\.\d+)?.+", "");
+                name = name.Replace("[SubsPlease]", "");
+                name = Regex.Replace(name, @"\((720p|1080p)\)", "");
+                name = Regex.Replace(name, @"- \d+(\.\d+)?.+", "");
                 name = name.ReplaceSpecialCharacters();
 
-                string number = Regex.Match(subject, @"– \d+(\.\d+)?.+").Value;
+                string number = Regex.Match(subject, @"- \d+(\.\d+)?.+").Value;
                 number = Regex.Match(number, @"\d+(\.\d+)?").Value;
                 number = number.Trim();
                 string numberValue = number;

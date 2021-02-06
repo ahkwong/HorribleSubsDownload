@@ -16,7 +16,7 @@ namespace HorribleSubsDownload.Entities
             MatchCollection nameMatch = namePattern.Matches(input);
             foreach (var match in nameMatch)
             {
-                result += match.ToString() + " ";
+                result += match.ToString().ToUpper();
             }
             return result.Trim();
         }
